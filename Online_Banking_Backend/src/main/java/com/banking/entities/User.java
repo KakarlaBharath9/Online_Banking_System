@@ -1,7 +1,6 @@
 package com.banking.entities;
 
-import javax.management.relation.Role;
-
+import com.banking.entities.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
