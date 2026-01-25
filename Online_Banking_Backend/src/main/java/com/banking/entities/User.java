@@ -15,7 +15,7 @@ public class User {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Long id;
-	@Column(unique=true)
+	@Column(unique=true, nullable=false)
 	private String username;
 	
 	private String email;
@@ -24,5 +24,7 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	private Role role;
 	
-	private boolean enabled=true;
+	//Admin Controls
+	private boolean enabled=false;
+	private boolean accountNonLocked=true;
 }
