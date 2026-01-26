@@ -8,6 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.banking.entities.User;
@@ -32,7 +33,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			throw new DisabledException("User not approved by admin");
 			
 		}
-		
+		System.out.println("DB PASSWORD = " + user.getPassword());
+		System.out.println(
+		  new BCryptPasswordEncoder().matches("admin123", user.getPassword())
+		);
+
 		//account Freeze check
 		if(!user.isAccountNonLocked()) {
 			throw new LockedException("User account is frozen");
