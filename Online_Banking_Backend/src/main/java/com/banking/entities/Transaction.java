@@ -21,5 +21,6 @@ public class Transaction {
 	private String type; //CREDIT //DEBIT
 	private LocalDateTime timestamp;
 	@ManyToOne
+	@JoinColumn(name="account_id")
 	private Account account;
 }
