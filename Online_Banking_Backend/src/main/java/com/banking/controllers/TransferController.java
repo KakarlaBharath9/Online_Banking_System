@@ -12,18 +12,15 @@ import com.banking.services.TransferService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/transfer")
+@RequestMapping("/api/accounts")
 @RequiredArgsConstructor
 public class TransferController {
-	private final TransferService service;
-	
-	@PostMapping
-	public ResponseEntity<String> transfer(@RequestBody TransferRequest request){
-		service.transfer(
-			request.getFromAccount(),
-			request.getToAccount(),
-			request.getAmount()
-		);
-		return ResponseEntity.ok("Transfer successful");
-	}
+
+    private final TransferService transferService;
+
+    @PostMapping("/transfer")
+    public ResponseEntity<String> transfer(@RequestBody TransferRequest request) {
+        transferService.transferMoney(request);
+        return ResponseEntity.ok("Transfer successful");
+    }
 }

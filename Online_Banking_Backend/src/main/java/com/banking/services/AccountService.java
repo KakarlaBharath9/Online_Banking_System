@@ -18,6 +18,9 @@ public class AccountService {
 	private final UserRepository userRepo;
 	
 	public Account createAccount(String username, Double initialBalance) {
+		if (initialBalance==null) {
+			initialBalance=0.0;
+		}
 		User user=userRepo.findByUsername(username)
 				.orElseThrow(()->new RuntimeException("User not found"));
 		Account account=new Account();

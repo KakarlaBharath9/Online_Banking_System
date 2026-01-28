@@ -1,8 +1,13 @@
 package com.banking.dtos;
 
-import lombok.Data;
 
-@Data
 public class CreateAccountRequest {
 	private Double initialBalance;
+	
+	public Double getInitialBalance() {
+		return initialBalance;
+	}
+	public void setInitialBalance(Double initialBalance) {
+		this.initialBalance=initialBalance;
+	}
 }
