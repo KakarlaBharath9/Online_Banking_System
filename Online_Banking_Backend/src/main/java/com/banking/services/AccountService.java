@@ -9,6 +9,7 @@ import com.banking.entities.User;
 import com.banking.repositories.AccountRepository;
 import com.banking.repositories.UserRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,6 +35,24 @@ public class AccountService {
 	
 	public List<Account> getUserAccounts(String username){
 		return repo.findByUserUsername(username);
+	}
+	
+	//deposit logic 
+	@Transactional
+	public Account deposit(String username, String accountNumber, Double amount) {
+		System.out.println("SERVICE AMOUNT = "+amount);
+		if(amount==null ||amount<=0) {
+			throw new RuntimeException("Deposit amount must be positive");
+		}
+		
+		Account account=repo.findByAccountNumber(accountNumber)
+				.orElseThrow(()->new RuntimeException("Account not found"));
+		//ensure user owns the account
+		if(!account.getUser().getUsername().equals(username)) {
+			throw new RuntimeException("Unauthorized account access");
+		}
+		account.setBalance(account.getBalance()+amount);
+		return repo.save(account);
 	}
 	private String generateAccountNumber() {
 		return "ACC"+System.currentTimeMillis();
