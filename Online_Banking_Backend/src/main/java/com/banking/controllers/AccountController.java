@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.banking.dtos.CreateAccountRequest;
 import com.banking.dtos.DepositRequest;
+import com.banking.dtos.TransferRequest;
+import com.banking.dtos.withdrawRequest;
 import com.banking.entities.Account;
 import com.banking.services.AccountService;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,6 +53,21 @@ public class AccountController {
 	            request.getAccountNumber(),
 	            request.getAmount()
 	    );
+	}
+	
+	//withdraw request
+	@PostMapping("/withdraw")
+	public Account withdraw(
+			@AuthenticationPrincipal UserDetails userDetails,
+			@org.springframework.web.bind.annotation.RequestBody withdrawRequest request
+			) {
+		System.out.println("CONTROLLER WITHDRAW = "+request.getAmount());
+		
+		return service.withdraw(
+				userDetails.getUsername(),
+				request.getAccountNumber(),
+				request.getAmount()
+				);
 	}
 
 	//get user accounts

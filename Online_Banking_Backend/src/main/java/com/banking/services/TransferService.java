@@ -21,13 +21,21 @@ public class TransferService {
     private final TransactionRepository transactionRepository;
 
     @Transactional
-    public void transferMoney(TransferRequest request) {
+    public void transferMoney(String username, TransferRequest request) {
 
         Account from = accountRepository.findByAccountNumber(request.getFromAccount())
                 .orElseThrow(() -> new RuntimeException("From account not found"));
 
+        if (!from.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("Unauthorized transfer attempt");
+        }
+
         Account to = accountRepository.findByAccountNumber(request.getToAccount())
                 .orElseThrow(() -> new RuntimeException("To account not found"));
+
+        if (request.getAmount() <= 0) {
+            throw new RuntimeException("Amount must be positive");
+        }
 
         if (from.getBalance() < request.getAmount()) {
             throw new RuntimeException("Insufficient balance");
@@ -46,4 +54,5 @@ public class TransferService {
                         LocalDateTime.now(), to)
         );
     }
+
 }

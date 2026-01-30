@@ -54,6 +54,66 @@ public class AccountService {
 		account.setBalance(account.getBalance()+amount);
 		return repo.save(account);
 	}
+	
+	@Transactional
+	public Account withdraw(String username, String accountNumber, Double amount) {
+		System.out.println("WITHDRAW AMOUNT = "+amount);
+		
+		if(amount==null || amount<=0) {
+			throw new RuntimeException("Withdraw amount must be positive");
+		}
+		Account account=repo.findByAccountNumber(accountNumber)
+				.orElseThrow(()->new RuntimeException("Account not found"));
+		
+		//ownership check
+		if(!account.getUser().getUsername().equals(username)) {
+			throw new RuntimeException("Unauthorized account access");
+		}
+		
+		if(account.getBalance()<amount) {
+			throw new RuntimeException("Insufficient balance");
+		}
+		account.setBalance(account.getBalance()-amount);
+		
+		return repo.save(account);
+	}
+	
+	@Transactional
+	public void transfer(String username,
+			String fromAccountNumber,
+			String toAccountNumber,
+			Double amount) {
+		System.out.println("TRANSFER AMOUNT = "+amount);
+		
+		if(amount==null || amount<=0) {
+			throw new RuntimeException("Transfer amount must be positive");
+		}
+		
+		if(fromAccountNumber.equals(toAccountNumber)) {
+			throw new RuntimeException("Cannot transfer to same account");
+		}
+		
+		Account fromAccount=repo.findByAccountNumber(fromAccountNumber)
+				.orElseThrow(()->new RuntimeException("Source account not found"));
+		Account toAccount=repo.findByAccountNumber(toAccountNumber)
+				.orElseThrow(()->new RuntimeException("Destination account not found"));
+		//ownership check(very important)
+		if (!fromAccount.getUser().getUsername().equals(username)) {
+			throw new RuntimeException("Unauthorized account access");
+		}
+		if(fromAccount.getBalance()<amount) {
+			throw new RuntimeException("Insufficient balance");
+		}
+		
+		//debit
+		fromAccount.setBalance(fromAccount.getBalance()-amount);
+		//credit
+		toAccount.setBalance(toAccount.getBalance()+amount);
+		
+		repo.save(fromAccount);
+		repo.save(toAccount);
+	}
+	
 	private String generateAccountNumber() {
 		return "ACC"+System.currentTimeMillis();
 	}
