@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.banking.dtos.MonthlyStatementResponse;
 import com.banking.dtos.TransactionResponse;
 
 @RestController
@@ -52,4 +53,20 @@ public class TransactionController {
                 pageable
         );
     }
+    
+    @GetMapping("/statement")
+    public MonthlyStatementResponse getMonthlyStatement(
+            Authentication authentication,
+            @RequestParam String accountNumber,
+            @RequestParam int month,
+            @RequestParam int year
+    ) {
+        return transactionService.getMonthlyStatement(
+                authentication.getName(),
+                accountNumber,
+                month,
+                year
+        );
+    }
+
 }

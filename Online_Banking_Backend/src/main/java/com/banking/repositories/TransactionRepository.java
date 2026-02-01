@@ -34,4 +34,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 			LocalDateTime end,
 			Pageable pageable
 			);
+	List<Transaction>findByAccountAccountNumberAndTimestampBetween(
+			String accountNumber,
+			LocalDateTime start,
+			LocalDateTime end
+			);
 }
