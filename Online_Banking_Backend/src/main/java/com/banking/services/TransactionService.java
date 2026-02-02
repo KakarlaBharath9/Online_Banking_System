@@ -81,35 +81,6 @@ public class TransactionService {
             int month,
             int year
     ) {
-
-        validateAccountOwnership(username, accountNumber);
-
-        YearMonth yearMonth = YearMonth.of(year, month);
-
-        LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
-        LocalDateTime endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59);
-
-        List<TransactionResponse> transactions =
-                transactionRepository
-                        .findByAccountAccountNumberAndTimestampBetween(
-                                accountNumber, startDate, endDate)
-                        .stream()
-                        .map(this::toTransactionResponse)
-                        .toList();
-
-        return new MonthlyStatementResponse(
-                accountNumber,
-                month,
-                year,
-                transactions
-        );
-    }
-
-    /* ===============================
-       HELPER METHODS
-       =============================== */
-
-    private Account validateAccountOwnership(String username, String accountNumber) {
         Account account = accountRepository
                 .findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
@@ -117,17 +88,53 @@ public class TransactionService {
         if (!account.getUser().getUsername().equals(username)) {
             throw new RuntimeException("Unauthorized account access");
         }
-        return account;
-    }
 
-    private TransactionResponse toTransactionResponse(Transaction tx) {
-        return new TransactionResponse(
-                tx.getId(),
-                tx.getAccount().getAccountNumber(),
-                tx.getAmount(),
-                tx.getType(),
-                tx.getTimestamp()
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDateTime startDate = yearMonth.atDay(1).atStartOfDay();
+        LocalDateTime endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        List<Transaction> transactions =
+                transactionRepository.findByAccountAccountNumberAndTimestampBetween(
+                        accountNumber, startDate, endDate
+                );
+
+        // ---- CALCULATIONS ----
+        double totalCredit = 0.0;
+        double totalDebit = 0.0;
+
+        for (Transaction tx : transactions) {
+            if ("CREDIT".equals(tx.getType())) {
+                totalCredit += tx.getAmount();
+            } else if ("DEBIT".equals(tx.getType())) {
+                totalDebit += tx.getAmount();
+            }
+        }
+
+        double closingBalance = account.getBalance();
+        double openingBalance = closingBalance - totalCredit + totalDebit;
+
+        // ---- ENTITY → DTO ----
+        List<TransactionResponse> txResponses = transactions.stream()
+                .map(tx -> new TransactionResponse(
+                        tx.getId(),
+                        tx.getAccount().getAccountNumber(),
+                        tx.getAmount(),
+                        tx.getType(),
+                        tx.getTimestamp()
+                ))
+                .toList();
+
+        return new MonthlyStatementResponse(
+                accountNumber,
+                month,
+                year,
+                openingBalance,
+                closingBalance,
+                totalCredit,
+                totalDebit,
+                txResponses
         );
     }
+
 
 }
