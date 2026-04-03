@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,8 +18,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.banking.entities.Transaction;
+import com.banking.services.EmailService;
 import com.banking.services.MonthlyStatementPdfService;
 import com.banking.services.TransactionService;
+import com.banking.services.YearlyStatementPdfService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,15 +30,18 @@ import org.springframework.data.domain.Pageable;
 
 import com.banking.dtos.MonthlyStatementResponse;
 import com.banking.dtos.TransactionResponse;
+import com.banking.dtos.YearlyStatementResponse;
 
 @RestController
 @RequestMapping("/api/transactions")
 @RequiredArgsConstructor
 public class TransactionController {
-
+	
     private final TransactionService transactionService;
     private final MonthlyStatementPdfService monthlyStatementPdfService;
-
+    private final YearlyStatementPdfService yearlyStatementPdfService;
+    private final EmailService emailService;
+    
     @GetMapping
     public Page<TransactionResponse> getTransactions(
             Authentication authentication,
@@ -58,8 +65,8 @@ public class TransactionController {
                 pageable
         );
     }
-    
-    @GetMapping("/statement")
+    //monthly statement
+    @GetMapping("/statement/monthly")
     public MonthlyStatementResponse getMonthlyStatement(
             Authentication authentication,
             @RequestParam String accountNumber,
@@ -73,7 +80,7 @@ public class TransactionController {
                 year
         );
     }
-    
+    //monthly statement pdf 
     @GetMapping("/monthly/pdf")
     public ResponseEntity<byte[]> downloadMonthlyPdf(
             @RequestParam String accountNumber,
@@ -97,5 +104,61 @@ public class TransactionController {
                 .header("Content-Type", "application/pdf")
                 .body(pdf);
     }
-
+    //yearly statement
+    @GetMapping("/statement/yearly")
+    public YearlyStatementResponse getYearlyStatement(
+    		@AuthenticationPrincipal UserDetails userDetails,
+    		@RequestParam String accountNumber,
+    		@RequestParam int year
+    		) {
+    	return transactionService.getYearlyStatement(
+    			userDetails.getUsername(),
+    			accountNumber,
+    			year
+    			);
+    }
+    //yearly statement pdf
+    @GetMapping("/yearly/pdf")
+    public ResponseEntity<byte[]>downloadYearlyStatementPdf(
+    		@AuthenticationPrincipal UserDetails userDetails,
+    		@RequestParam String accountNumber,
+    		@RequestParam int year
+    		
+    		){
+    	//Secure-username checked inside service
+    	YearlyStatementResponse statement=
+    			transactionService.getYearlyStatement(
+    					userDetails.getUsername(), 
+    					accountNumber, 
+    					year
+    					);
+    	//Generate pdf
+    	byte[]pdf=yearlyStatementPdfService.generatePdf(statement);
+    	
+    	//Return as downlodable file
+    	return ResponseEntity.ok()
+    			.header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=yearly-statement-"+year+".pdf")
+    			.contentType(MediaType.APPLICATION_PDF)
+    			.body(pdf);
+    }
+    @GetMapping("/yearly/pdf/email")
+    public ResponseEntity<String>emailYearlyStatement(
+    		@AuthenticationPrincipal UserDetails user,
+    		@RequestParam(name="accountNumber") String accountNumber,
+    		@RequestParam int year
+    		){
+    	YearlyStatementResponse statement=
+    			transactionService.getYearlyStatement(user.getUsername(), accountNumber, year);
+    	
+    	byte[] pdf=yearlyStatementPdfService.generatePdf(statement);
+    	
+    	emailService.sendPdf(
+    			user.getUsername(),
+    			"Yearly Statement "+year,
+    			"Please find your statement attached",
+    			pdf,
+    			"Yearly_Statement_"+year+".pdf"
+    			);
+    	return ResponseEntity.ok("Email sent successfully");
+    }
 }

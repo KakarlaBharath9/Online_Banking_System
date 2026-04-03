@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.banking.dtos.MonthlyStatementResponse;
 import com.banking.dtos.TransactionResponse;
+import com.banking.dtos.YearlyStatementResponse;
 import com.banking.entities.Account;
 import com.banking.entities.Transaction;
 import com.banking.repositories.AccountRepository;
@@ -75,6 +76,8 @@ public class TransactionService {
                 tx.getTimestamp()
         ));
     }
+    
+    //monthly statement pdf
     public MonthlyStatementResponse getMonthlyStatement(
             String username,
             String accountNumber,
@@ -134,6 +137,61 @@ public class TransactionService {
                 totalDebit,
                 txResponses
         );
+    }
+    
+    //yearly statement pdf
+    public YearlyStatementResponse getYearlyStatement(
+    		String username,
+    		String accountNumber,
+    		int year
+    		) {
+    	Account account=accountRepository
+    			.findByAccountNumber(accountNumber)
+    			.orElseThrow(()->new RuntimeException("Account not found"));
+    	
+    	if(!account.getUser().getUsername().equals(username)) {
+    		throw new RuntimeException("Unauthorized account access");
+    	}
+    	
+    	LocalDateTime startDate=LocalDateTime.of(year,1,1,0,0);
+    	LocalDateTime endDate=LocalDateTime.of(year, 12, 31, 23, 59, 59);
+    	
+    	List<Transaction>transactions=
+    			transactionRepository.findByAccountAccountNumberAndTimestampBetween(
+    					accountNumber, startDate, endDate
+    					);
+    	double totalCredit=0;
+    	double totalDebit=0;
+    	
+    	for(Transaction tx:transactions) {
+    		if("CREDIT".equals(tx.getType())) {
+    			totalCredit+=tx.getAmount();
+    		}else {
+    			totalDebit+=tx.getAmount();
+    		}
+    	}
+    	double closingBalance=account.getBalance();
+    	double openingBalance=closingBalance+totalDebit-totalCredit;
+    	
+    	List<TransactionResponse>txResponses=
+    			transactions.stream()
+    			.map(tx->new TransactionResponse(
+    					tx.getId(),
+    					tx.getAccount().getAccountNumber(),
+    					tx.getAmount(),
+    					tx.getType(),
+    					tx.getTimestamp()
+    					))
+    					.toList();
+    	return new YearlyStatementResponse(
+    			accountNumber,
+    			year,
+    			openingBalance,
+    			closingBalance,
+    			totalCredit,
+    			totalDebit,
+    			txResponses
+    			);
     }
 
 
