@@ -141,6 +141,9 @@ public class TransactionController {
     			.contentType(MediaType.APPLICATION_PDF)
     			.body(pdf);
     }
+    
+    //email service
+    //yearly 
     @GetMapping("/yearly/pdf/email")
     public ResponseEntity<String>emailYearlyStatement(
     		@AuthenticationPrincipal UserDetails user,
@@ -153,12 +156,37 @@ public class TransactionController {
     	byte[] pdf=yearlyStatementPdfService.generatePdf(statement);
     	
     	emailService.sendPdf(
-    			user.getUsername(),
+    			"your_email@gmail.com",
     			"Yearly Statement "+year,
     			"Please find your statement attached",
     			pdf,
     			"Yearly_Statement_"+year+".pdf"
     			);
     	return ResponseEntity.ok("Email sent successfully");
+    }
+    //monthly email service
+    @GetMapping("/monthly/pdf/email")
+    public ResponseEntity<String>emailMonthlyStatement(
+    		@AuthenticationPrincipal UserDetails user,
+    		@RequestParam String accountNumber,
+    		@RequestParam int month,
+    		@RequestParam int year
+    		){
+    			MonthlyStatementResponse statement=
+    					transactionService.getMonthlyStatement(
+    							user.getUsername(),
+    							accountNumber,
+    							month,
+    							year);
+    			byte[] pdf=monthlyStatementPdfService.generatePdf(statement);
+    			
+    			emailService.sendPdf(
+    					"your_email@gmail.com",
+    					"Monthly Statement"+month+"/"+year,
+    					"please find your monthly statement attached",
+    					pdf,
+    					"monthly_Statement_"+month+"_"+year+".pdf"
+    					);
+    			return ResponseEntity.ok("Monthly statement sent successfully");
     }
 }
