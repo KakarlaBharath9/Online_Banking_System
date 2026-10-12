@@ -32,6 +32,10 @@ public class SecurityConfig {
 		.requestMatchers("/api/auth/**").permitAll()
 		.requestMatchers("/api/admin/**").hasRole("ADMIN")
 		.requestMatchers("/api/accounts/**").hasAnyRole("CUSTOMER","ADMIN")
+		.requestMatchers(
+                "/api/transactions/**",
+                "/api/statements/**"
+            ).hasRole("CUSTOMER")
 		.anyRequest().authenticated()
 		)
 		.sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

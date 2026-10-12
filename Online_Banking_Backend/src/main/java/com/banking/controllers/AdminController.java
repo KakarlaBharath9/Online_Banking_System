@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.banking.dtos.UserResponse;
 import com.banking.entities.Account;
 import com.banking.entities.User;
 import com.banking.services.AdminService;
@@ -22,10 +23,24 @@ import lombok.RequiredArgsConstructor;
 public class AdminController {
 	private final AdminService adminService;
 	
+	private UserResponse toUserResponse(User user) {
+	    return new UserResponse(
+	            user.getId(),
+	            user.getUsername(),
+	            user.getEmail(),
+	            user.getRole(),
+	            user.isEnabled(),
+	            user.isAccountNonLocked()
+	    );
+	}
+
 	//get all users
 	@GetMapping("/users")
-	public List<User> getAllUsers(){
-		return adminService.getAllUsers();
+	public List<UserResponse> getAllUsers(){
+		return adminService.getAllUsers()
+				.stream()
+				.map(this::toUserResponse)
+				.toList();
 	}
 	
 	//approve user
